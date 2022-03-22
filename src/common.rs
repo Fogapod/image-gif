@@ -213,7 +213,7 @@ impl Frame<'static> {
     ) -> Frame<'static> {
         assert_eq!(width as usize * height as usize * 4, pixels.len(), "Too much or too little pixel data for the given width and height to create a GIF Frame");
         assert!(
-            speed >= 1 && speed <= 30,
+            (1..=30).contains(&speed),
             "speed needs to be in the range [1, 30]"
         );
         let mut transparent = None;
@@ -250,15 +250,13 @@ impl Frame<'static> {
         }
 
         // Palette size <= 256 elements, we can build an exact palette.
-        let mut colors_vec: Vec<(u8, u8, u8, u8)> = colors.into_iter().collect();
-        colors_vec.sort();
-        let palette = colors_vec
+        let palette = colors
             .iter()
-            .map(|&(r, g, b, _a)| vec![r, g, b])
-            .flatten()
+            .flat_map(|&(r, g, b, _a)| vec![r, g, b])
             .collect();
+
         let colors_lookup: HashMap<(u8, u8, u8, u8), u8> =
-            colors_vec.into_iter().zip(0..=255).collect();
+            colors.into_iter().zip(0..=255).collect();
 
         let index_of = |pixel: &[u8]| {
             *colors_lookup
@@ -382,6 +380,6 @@ impl Frame<'static> {
 // Changing .zip(0_u8..) to .zip(0_u8..=255) fixes this issue.
 fn rgba_speed_avoid_panic_256_colors() {
     let side = 16;
-    let pixel_data: Vec<u8> = (0..=255).map(|a| vec![a, a, a]).flatten().collect();
+    let pixel_data: Vec<u8> = (0..=255).flat_map(|a| vec![a, a, a]).collect();
     Frame::from_rgb(side, side, &pixel_data);
 }
